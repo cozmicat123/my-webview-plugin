@@ -24,7 +24,7 @@ class WebViewPlugin : Plugin() {
             "webview",
             "Opens a URL in an in-app WebView"
         ) { ctx ->
-            val url = ctx.content.trim()
+            val url = ctx.rawContent.trim()
             
             if (url.isEmpty()) {
                 return@registerCommand CommandsAPI.CommandResult("Usage: /webview <url>", null, false)
