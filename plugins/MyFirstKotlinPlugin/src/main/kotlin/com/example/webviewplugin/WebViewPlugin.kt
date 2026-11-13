@@ -3,7 +3,6 @@ package com.example.webviewplugin
 import android.annotation.SuppressLint
 import android.app.Dialog
 import android.content.Context
-import android.content.ContextWrapper
 import android.os.Bundle
 import android.view.ViewGroup
 import android.webkit.CookieManager
@@ -13,52 +12,39 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.FrameLayout
 import androidx.fragment.app.DialogFragment
-import androidx.fragment.app.FragmentActivity
-import com.aliucord.Utils
 import com.aliucord.annotations.AliucordPlugin
+import com.aliucord.api.CommandsAPI
 import com.aliucord.entities.Plugin
-import com.aliucord.patcher.Hook
-import com.discord.widgets.chat.list.adapter.WidgetChatListAdapterItemMessage
-import com.discord.widgets.chat.list.entries.ChatListEntry
-import com.discord.widgets.chat.list.entries.MessageEntry
 
 @AliucordPlugin
 class WebViewPlugin : Plugin() {
 
     override fun start(context: Context) {
-        patcher.patch(
-            WidgetChatListAdapterItemMessage::class.java.getDeclaredMethod(
-                "onLongClick", android.view.View::class.java
+        CommandsAPI.registerCommand(
+            "webview",
+            "Opens a URL in an in-app WebView",
+            listOf(
+                CommandsAPI.CommandArg("url", "The URL to open", CommandsAPI.ArgType.STRING, true)
             ),
-            Hook { param ->
-                val entry = param.args[0] as? ChatListEntry ?: return@Hook
-                if (entry is MessageEntry) {
-                    val url = extractFirstUrl(entry.message.content) ?: return@Hook
-                    val adapter = param.thisObject as WidgetChatListAdapterItemMessage
-                    
-                    // Safely unwrap context to find FragmentActivity
-                    var ctx = adapter.itemView.context
-                    while (ctx is ContextWrapper) {
-                        if (ctx is FragmentActivity) break
-                        ctx = ctx.baseContext
-                    }
-                    val activity = ctx as? FragmentActivity ?: return@Hook
-                    
-                    val token = getDiscordToken(activity)
-                    if (token == null) {
-                        Utils.showToast("Could not find Discord token")
-                        return@Hook
-                    }
-
-                    WebViewDialog.newInstance(url, token).show(
-                        activity.supportFragmentManager, "webview_dialog"
-                    )
-                }
+            false
+        ) { ctx ->
+            val url = ctx.getString("url") ?: return@registerCommand CommandsAPI.CommandResult("URL is required")
+            val token = getDiscordToken(ctx.fragmentActivity)
+            
+            if (token == null) {
+                return@registerCommand CommandsAPI.CommandResult("Could not find Discord token")
             }
-        )
+
+            WebViewDialog.newInstance(url, token).show(
+                ctx.fragmentActivity.supportFragmentManager, "webview_dialog"
+            )
+            
+            CommandsAPI.CommandResult("Opening WebView...")
+        }
     }
 
     override fun stop(context: Context) {
+        CommandsAPI.unregisterAll()
         patcher.unpatchAll()
     }
 
@@ -67,12 +53,6 @@ class WebViewPlugin : Plugin() {
         return prefs.getString("token", null)
             ?: prefs.getString("auth_token", null)
             ?: prefs.getString("access_token", null)
-    }
-
-    private fun extractFirstUrl(text: String): String? {
-        val pattern = java.util.regex.Pattern.compile("https?://\\S+")
-        val matcher = pattern.matcher(text)
-        return if (matcher.find()) matcher.group() else null
     }
 }
 
@@ -146,7 +126,7 @@ class WebViewDialog : DialogFragment() {
                     return false
                 }
             }
-            loadUrl("https://discord.com/app")
+            loadUrl(url)
         }
 
         val closeBtn = android.widget.Button(requireContext()).apply {
