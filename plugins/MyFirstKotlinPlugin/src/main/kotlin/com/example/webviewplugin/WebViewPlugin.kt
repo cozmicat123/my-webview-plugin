@@ -41,8 +41,11 @@ class WebViewPlugin : Plugin() {
         patcher.unpatchAll()
     }
 
-    private fun extractFirstUrl(text: String): String? =
-        Regex("""https?://\S+""").find(text)?.value
+    private fun extractFirstUrl(text: String): String? {
+        val regex: Regex = Regex("""https?://\S+""")
+        val match: MatchResult? = regex.find(text)
+        return match?.value
+    }
 }
 
 @SuppressLint("SetJavaScriptEnabled")
