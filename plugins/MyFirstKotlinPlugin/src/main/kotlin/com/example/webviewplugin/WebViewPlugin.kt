@@ -7,45 +7,58 @@ import android.os.Bundle
 import android.view.ViewGroup
 import android.webkit.CookieManager
 import android.webkit.WebResourceRequest
-import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.FrameLayout
 import androidx.fragment.app.DialogFragment
+import com.aliucord.Utils
 import com.aliucord.annotations.AliucordPlugin
 import com.aliucord.api.CommandsAPI
 import com.aliucord.entities.Plugin
+import com.discord.api.commands.ApplicationCommandType
+import com.discord.models.commands.ApplicationCommandOption
 
 @AliucordPlugin
 class WebViewPlugin : Plugin() {
 
+    private val commands = CommandsAPI("webview")
+
     override fun start(context: Context) {
-        CommandsAPI.registerCommand(
+        val options = listOf(
+            ApplicationCommandOption(
+                ApplicationCommandType.STRING,
+                "url",
+                "The URL to open in the WebView",
+                null,
+                true,   // required
+                false,  // autocomplete
+                null,
+                null
+            )
+        )
+
+        commands.registerCommand(
             "webview",
             "Opens a URL in an in-app WebView",
-            listOf(
-                CommandsAPI.CommandArg("url", "The URL to open", CommandsAPI.ArgType.STRING, true)
-            ),
-            false
+            options
         ) { ctx ->
-            val url = ctx.getString("url") ?: return@registerCommand CommandsAPI.CommandResult("URL is required")
-            val token = getDiscordToken(ctx.fragmentActivity)
-            
+            val url = ctx.getRequiredString("url")
+            val token = getDiscordToken(Utils.appActivity)
+
             if (token == null) {
-                return@registerCommand CommandsAPI.CommandResult("Could not find Discord token")
+                return@registerCommand CommandsAPI.CommandResult("Could not find Discord token", null, false)
             }
 
             WebViewDialog.newInstance(url, token).show(
-                ctx.fragmentActivity.supportFragmentManager, "webview_dialog"
+                Utils.appActivity.supportFragmentManager, "webview_dialog"
             )
-            
-            CommandsAPI.CommandResult("Opening WebView...")
+
+            CommandsAPI.CommandResult("Opening WebView...", null, false)
         }
     }
 
     override fun stop(context: Context) {
-        CommandsAPI.unregisterAll()
-        patcher.unpatchAll()
+        commands.unregisterAll()
     }
 
     private fun getDiscordToken(context: Context): String? {
@@ -112,19 +125,10 @@ class WebViewDialog : DialogFragment() {
                     view?.evaluateJavascript(js, null)
                 }
 
-                override fun shouldInterceptRequest(
-                    view: WebView?,
-                    request: WebResourceRequest?
-                ): WebResourceResponse? {
-                    return super.shouldInterceptRequest(view, request)
-                }
-
                 override fun shouldOverrideUrlLoading(
                     view: WebView?,
                     request: WebResourceRequest?
-                ): Boolean {
-                    return false
-                }
+                ): Boolean = false
             }
             loadUrl(url)
         }
