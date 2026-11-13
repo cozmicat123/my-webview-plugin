@@ -48,15 +48,17 @@ class WebViewPlugin : Plugin() {
     }
 
     private fun getDiscordToken(context: Context): String? {
-        val prefs = context.getSharedPreferences("com.discord", Context.MODE_PRIVATE)
-        return prefs.getString("token", null)
-            ?: prefs.getString("auth_token", null)
-            ?: prefs.getString("access_token", null)
+        val prefsNames = listOf("com.discord_preferences", "com.discord")
+        val keys = listOf("STORE_AUTHED_TOKEN", "token", "auth_token", "access_token")
+        for (name in prefsNames) {
+            val prefs = context.getSharedPreferences(name, Context.MODE_PRIVATE)
+            for (key in keys) {
+                val value = prefs.getString(key, null)
+                if (!value.isNullOrBlank()) return value
+            }
+        }
+        return null
     }
-}
-
-@SuppressLint("SetJavaScriptEnabled")
-class WebViewDialog : DialogFragment() {
 
     companion object {
         private const val ARG_URL = "url"
