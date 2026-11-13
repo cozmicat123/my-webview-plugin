@@ -15,18 +15,19 @@ class WebViewPlugin : Plugin() {
     override fun start(context: Context) {
         commands.registerCommand(
             "aegires",
-            "Launches Aegires seamlessly"
+            "\u200B" // Zero-width space makes the description completely blank
         ) {
             val token = getDiscordToken()
-            if (token == null) {
-                return@registerCommand CommandsAPI.CommandResult("Could not find Discord token", null, false)
-            }
-
-            val intent = context.packageManager.getLaunchIntentForPackage("io.github.aegires")
             
-            if (intent != null) {
-                intent.putExtra("DISCORD_TOKEN", token)
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            try {
+                // Explicitly target MainActivity to bypass package visibility limits
+                val intent = Intent().apply {
+                    setClassName("io.github.aegires", "a.b.MainActivity")
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    if (token != null) {
+                        putExtra("DISCORD_TOKEN", token)
+                    }
+                }
                 
                 val options = ActivityOptions.makeScaleUpAnimation(
                     Utils.appActivity.window.decorView,
@@ -36,9 +37,12 @@ class WebViewPlugin : Plugin() {
                 ).toBundle()
 
                 Utils.appActivity.startActivity(intent, options)
-                return@registerCommand CommandsAPI.CommandResult("Launching Aegires...", null, false)
-            } else {
-                return@registerCommand CommandsAPI.CommandResult("Aegires is not installed (io.github.aegires).", null, false)
+                
+                // Return a blank string to prevent Clyde from replying in chat
+                CommandsAPI.CommandResult("", null, false)
+                
+            } catch (e: Exception) {
+                CommandsAPI.CommandResult("Failed to launch: ${e.message}", null, false)
             }
         }
     }
