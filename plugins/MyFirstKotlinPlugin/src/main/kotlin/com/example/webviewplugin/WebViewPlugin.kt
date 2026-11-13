@@ -25,9 +25,14 @@ class WebViewPlugin : Plugin() {
             "webview",
             "Opens a URL in an in-app WebView"
         ) { ctx ->
-            val url = ctx.rawContent.trim()
+            val raw = ctx.rawContent.trim()
+            
+            // Extract the actual URL from the raw string using Regex
+            val pattern = java.util.regex.Pattern.compile("https?://\\S+")
+            val matcher = pattern.matcher(raw)
+            val url = if (matcher.find()) matcher.group() else null
 
-            if (url.isEmpty()) {
+            if (url.isNullOrEmpty()) {
                 return@registerCommand CommandsAPI.CommandResult("Usage: /webview <url>", null, false)
             }
 
@@ -50,7 +55,6 @@ class WebViewPlugin : Plugin() {
 
     private fun getDiscordToken(): String? {
         return try {
-            // This is the exact method used by the Aliucord Token plugin.
             RestAPI.AppHeadersProvider.INSTANCE.authToken
         } catch (e: Throwable) {
             logger.error("Failed to grab token via RestAPI", e)
