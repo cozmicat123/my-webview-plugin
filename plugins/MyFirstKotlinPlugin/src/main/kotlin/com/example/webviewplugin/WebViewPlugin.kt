@@ -42,9 +42,9 @@ class WebViewPlugin : Plugin() {
     }
 
     private fun extractFirstUrl(text: String): String? {
-        val regex: Regex = Regex("""https?://\S+""")
-        val match: MatchResult? = regex.find(text)
-        return match?.value
+        val pattern = java.util.regex.Pattern.compile("https?://\\S+")
+        val matcher = pattern.matcher(text)
+        return if (matcher.find()) matcher.group() else null
     }
 }
 
