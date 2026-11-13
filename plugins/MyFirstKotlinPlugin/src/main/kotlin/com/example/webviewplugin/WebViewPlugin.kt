@@ -30,7 +30,7 @@ class WebViewPlugin : Plugin() {
                     val url = extractFirstUrl(entry.message.content) ?: return@Hook
                     val adapter = param.thisObject as WidgetChatListAdapterItemMessage
                     WebViewDialog.newInstance(url).show(
-                        adapter.parentFragmentManager, "webview_dialog"
+                        (adapter.itemView.context as? androidx.fragment.app.FragmentActivity)?.supportFragmentManager ?: return@Hook, "webview_dialog"
                     )
                 }
             }
@@ -74,7 +74,7 @@ class WebViewDialog : DialogFragment() {
             settings.javaScriptEnabled = true
             settings.domStorageEnabled = true
             webViewClient = object : WebViewClient() {
-                override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean = false
+                override fun shouldOverrideUrlLoading(view: WebView?, request: android.webkit.WebResourceRequest?): Boolean = false
             }
             loadUrl(url)
         }
