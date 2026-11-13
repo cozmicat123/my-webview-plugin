@@ -15,6 +15,7 @@ import com.aliucord.Utils
 import com.aliucord.annotations.AliucordPlugin
 import com.aliucord.api.CommandsAPI
 import com.aliucord.entities.Plugin
+import com.discord.utilities.rest.RestAPI
 
 @AliucordPlugin
 class WebViewPlugin : Plugin() {
@@ -30,7 +31,7 @@ class WebViewPlugin : Plugin() {
                 return@registerCommand CommandsAPI.CommandResult("Usage: /webview <url>", null, false)
             }
 
-            val token = getDiscordToken(Utils.appActivity)
+            val token = getDiscordToken()
             if (token == null) {
                 return@registerCommand CommandsAPI.CommandResult("Could not find Discord token", null, false)
             }
@@ -47,18 +48,14 @@ class WebViewPlugin : Plugin() {
         commands.unregisterAll()
     }
 
-    private fun getDiscordToken(context: Context): String? {
-        val prefsNames = listOf("com.discord_preferences", "com.discord")
-        val keys = listOf("STORE_AUTHED_TOKEN", "token", "auth_token", "access_token")
-        
-        for (name in prefsNames) {
-            val prefs = context.getSharedPreferences(name, Context.MODE_PRIVATE)
-            for (key in keys) {
-                val value = prefs.getString(key, null)
-                if (!value.isNullOrBlank()) return value
-            }
+    private fun getDiscordToken(): String? {
+        return try {
+            // This is the exact method used by the Aliucord Token plugin.
+            RestAPI.AppHeadersProvider.INSTANCE.authToken
+        } catch (e: Throwable) {
+            logger.error("Failed to grab token via RestAPI", e)
+            null
         }
-        return null
     }
 }
 
