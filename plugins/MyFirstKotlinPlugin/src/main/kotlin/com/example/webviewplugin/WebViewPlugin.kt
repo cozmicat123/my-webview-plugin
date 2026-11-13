@@ -31,7 +31,6 @@ class WebViewPlugin : Plugin() {
                 return@registerCommand CommandsAPI.CommandResult("Could not find Discord token", null, false)
             }
 
-            // Post to main thread to ensure UI operations are safe
             Utils.mainThread.post {
                 val dialog = WebViewDialog(Utils.appActivity, "https://discord.com/app", token)
                 dialog.show()
@@ -56,7 +55,7 @@ class WebViewPlugin : Plugin() {
 }
 
 @SuppressLint("SetJavaScriptEnabled")
-class WebViewDialog(context: Context, private val url: String, private val token: String) : Dialog(context) {
+class WebViewDialog(context: Context, private val targetUrl: String, private val token: String) : Dialog(context) {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -102,7 +101,8 @@ class WebViewDialog(context: Context, private val url: String, private val token
                     request: WebResourceRequest?
                 ): Boolean = false
             }
-            loadUrl(url)
+            // FIXED: explicitly referring to targetUrl to avoid WebView.getUrl() scoping bug
+            loadUrl(targetUrl)
         }
 
         val closeBtn = Button(context).apply {
