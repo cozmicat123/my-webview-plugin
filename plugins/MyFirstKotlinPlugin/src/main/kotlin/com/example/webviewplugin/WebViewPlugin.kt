@@ -15,36 +15,22 @@ import com.aliucord.Utils
 import com.aliucord.annotations.AliucordPlugin
 import com.aliucord.api.CommandsAPI
 import com.aliucord.entities.Plugin
-import com.discord.api.commands.ApplicationCommandType
-import com.discord.models.commands.ApplicationCommandOption
 
 @AliucordPlugin
 class WebViewPlugin : Plugin() {
 
-    private val commands = CommandsAPI("webview")
-
     override fun start(context: Context) {
-        val options = listOf(
-            ApplicationCommandOption(
-                ApplicationCommandType.STRING,
-                "url",
-                "The URL to open in the WebView",
-                null,
-                true,   // required
-                false,  // autocomplete
-                null,
-                null
-            )
-        )
-
         commands.registerCommand(
             "webview",
-            "Opens a URL in an in-app WebView",
-            options
+            "Opens a URL in an in-app WebView"
         ) { ctx ->
-            val url = ctx.getRequiredString("url")
-            val token = getDiscordToken(Utils.appActivity)
+            val url = ctx.content.trim()
+            
+            if (url.isEmpty()) {
+                return@registerCommand CommandsAPI.CommandResult("Usage: /webview <url>", null, false)
+            }
 
+            val token = getDiscordToken(Utils.appActivity)
             if (token == null) {
                 return@registerCommand CommandsAPI.CommandResult("Could not find Discord token", null, false)
             }
